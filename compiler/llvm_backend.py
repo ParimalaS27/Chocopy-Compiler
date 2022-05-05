@@ -116,6 +116,7 @@ class LLVMBackend(Backend):
 
     def WhileStmt(self, node: WhileStmt):
         if self.builder is None:
+<<<<<<< HEAD
             raise Exception("[WHILE STMT] No builder is active")
 
         bb_condition = self.builder.append_basic_block(
@@ -133,12 +134,40 @@ class LLVMBackend(Backend):
             condition = self.visit(node.condition)
             self.builder.cbranch(condition, bb_body, bb_end)
 
+=======
+            raise Exception("No builder is active")
+        
+        bb_condition = self.builder.append_basic_block(
+            self.module.get_unique_name("while.condition")
+        )
+        
+        bb_body = self.builder.append_basic_block(
+            self.module.get_unique_name("while.body")
+        )
+        
+        bb_end = self.builder.append_basic_block(
+            self.module.get_unique_name("while.end")
+        )
+        
+        self.builder.branch(bb_condition)
+        
+        with self.builder.goto_block(bb_condition):
+            condition = self.visit(node.condition)
+            self.builder.cbranch(condition,bb_body, bb_end)
+        
+>>>>>>> b5c92e354691a09c5da45c061463fcf9aabddb8b
         with self.builder.goto_block(bb_body):
             for stmt in node.body:
                 self.visit(stmt)
             self.builder.branch(bb_condition)
+<<<<<<< HEAD
 
         self.builder.position_at_end(bb_end)
+=======
+            
+        self.builder.position_at_end(bb_end)
+        
+>>>>>>> b5c92e354691a09c5da45c061463fcf9aabddb8b
 
     def BinaryExpr(self, node: BinaryExpr) -> Optional[ICMPInstr]:
         if self.builder is None:
