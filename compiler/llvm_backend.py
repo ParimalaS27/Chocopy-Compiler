@@ -115,10 +115,55 @@ class LLVMBackend(Backend):
         pass
 
     def WhileStmt(self, node: WhileStmt):
-        pass
+        if self.builder is None:
+            raise Exception("[WHILE STMT] No builder is active")
+
+        bb_condition = self.builder.append_basic_block(
+                self.module.get_unique_name("while.condition"))
+
+        bb_body = self.builder.append_basic_block(
+                self.module.get_unique_name("while.body"))
+
+        bb_end = self.builder.append_basic_block(
+                self.module.get_unique_name("while.end"))
+
+        self.builder.branch(bb_condition)
+
+        with self.builder.goto_block(bb_condition):
+            condition = self.visit(node.condition)
+            self.builder.cbranch(condition, bb_body, bb_end)
+
+        with self.builder.goto_block(bb_body):
+            for stmt in node.body:
+                self.visit(stmt)
+            self.builder.branch(bb_condition)
+
+        self.builder.position_at_end(bb_end)
 
     def BinaryExpr(self, node: BinaryExpr) -> Optional[ICMPInstr]:
-        pass
+        if self.builder is None:
+            raise Exception("[BINARY EXPR]  No Builder is active")
+
+        op = node.operator
+        operand1 = self.visit(node.left)
+        operand2 = self.visit(node.right)
+
+        if (op == "and"):
+            return self.builder.and_(operand1, operand2)
+        elif (op == "or"):
+            return self.builder.or_(operand1, operand2)
+        elif (op == "+"):
+            return self.builder.add(operand1, operand2)
+        elif (op == "-"):
+            return self.builder.sub(operand1, operand2)
+        elif (op == "*"):
+            return self.builder.mul(operand1, operand2)
+        elif (op == "/"):
+            return self.builder.sdiv(operand1, operand2)
+        elif (op == "%"):
+            return self.builder.srem(operand1, operand2)
+        elif (op in ["<", ">", "<=", ">=", "!=", "=="]):
+            return self.builder.icmp_signed(op, operand1, operand2)
 
     def Identifier(self, node: Identifier) -> LoadInstr:
         pass
