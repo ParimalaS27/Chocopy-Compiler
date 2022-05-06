@@ -210,7 +210,38 @@ class LLVMBackend(Backend):
 
 
     def IfExpr(self, node: IfExpr) -> PhiInstr:
-        pass
+        if self.builder is None:
+            raise Exception("No Builder is active")
+        
+        bb_condition = self.builder.append_basic_block(
+                self.module.get_unique_name("ifexpr.condition"))
+        bthen = self.builder.append_basic_block(
+                self.module.get_unique_name("ifexpr.then"))
+        belse = self.builder.append_basic_block(
+                self.module.get_unique_name("ifexpr.else"))
+        bb_end = self.builder.append_basic_block(
+                self.module.get_unique_name("ifexpr.end"))
+        self.builder.branch(bb_condition)
+
+        with self.builder.goto_block(bb_condition):
+            condition = self.visit(node.condition)
+            self.builder.cbranch(condition, bthen, belse)
+
+        with self.builder.goto_block(bthen):
+            then_value = self.visit(node.then)
+            self.builder.branch(bb_end)
+        
+        with self.builder.goto_block(belse):
+            else_value = self.visit(node.else_)
+            self.builder.branch(bb_end)
+
+        with self.builder.goto_block(bb_end):
+            phi = self.builder.phi(then_value.type)
+            phi.add_incoming(then_value, bthen)
+            phi.add_incoming(else_value, belse)
+        
+        self.builder.position_at_end(bb_end)
+        return phi
 
     ##################################
     #      END OF IMPLEMENTATION     #
