@@ -127,25 +127,32 @@ class LLVMBackend(Backend):
     def IfStmt(self, node: IfStmt):
         if self.builder is None:
             raise Exception("No builder is active")
+        
         bb_condition = self.builder.append_basic_block(
                 self.module.get_unique_name("ifstmt.condition"))
+        
         bthen = self.builder.append_basic_block(
                 self.module.get_unique_name("ifstmt.then"))
+        
         belse = self.builder.append_basic_block(
                 self.module.get_unique_name("ifstmt.else"))
+        
         bb_end = self.builder.append_basic_block(
                 self.module.get_unique_name("ifstmt.end"))
+        
         self.builder.branch(bb_condition)
 
         with self.builder.goto_block(bb_condition):
             condition = self.visit(node.condition)
             self.builder.cbranch(condition, bthen, belse)
+        
         with self.builder.goto_block(bthen):
-            for s in node.body:
+            for s in node.thenBody:
                 self.visit(s)
             self.builder.branch(bb_end)
+            
         with self.builder.goto_block(belse):
-            for s in node.body:
+            for s in node.elseBody:
                 self.visit(s)
             self.builder.branch(bb_end)
         
