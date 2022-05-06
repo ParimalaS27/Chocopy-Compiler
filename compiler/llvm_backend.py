@@ -106,16 +106,23 @@ class LLVMBackend(Backend):
     ##################################
 
     def VarDef(self, node: VarDef):
-        pass
+        if self.builder is None:
+            raise Exception("No builder is active")
+
+        var = self.visit(node.var)
+        allocation = self._create_alloca(var['name'], var['type'])
+        value = self.visit(node.value)
+        self.builder.store(value, allocation)
+        self.func_symtab[-1][var['name']] = allocation
 
     def AssignStmt(self, node: AssignStmt):
         if self.builder is None:
             raise Exception("No builder is active")
 
-        val = self.visit(node.value)
+        value = self.visit(node.value)
         targets = node.targets[::-1]
         for target in targets:
-            self.builder.store(val, self.func_symtab[-1][target.name])
+            self.builder.store(value, self.func_symtab[-1][target.name])
 
     def IfStmt(self, node: IfStmt):
         pass
