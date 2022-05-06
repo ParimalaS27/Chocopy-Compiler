@@ -109,7 +109,13 @@ class LLVMBackend(Backend):
         pass
 
     def AssignStmt(self, node: AssignStmt):
-        pass
+        if self.builder is None:
+            raise Exception("No builder is active")
+
+        val = self.visit(node.value)
+        targets = node.targets[::-1]
+        for target in targets:
+            self.builder.store(val, self.func_symtab[-1][target.name])
 
     def IfStmt(self, node: IfStmt):
         pass
@@ -167,7 +173,10 @@ class LLVMBackend(Backend):
             return self.builder.icmp_signed(op, operand1, operand2)
 
     def Identifier(self, node: Identifier) -> LoadInstr:
-        pass
+        if self.builder is None:
+            raise Exception("No builder is active")
+        return self.builder.load(self.func_symtab[-1][node.name])
+
 
     def IfExpr(self, node: IfExpr) -> PhiInstr:
         pass
