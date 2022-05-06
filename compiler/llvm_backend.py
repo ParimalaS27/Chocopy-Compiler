@@ -1,3 +1,12 @@
+##################################################
+#                Team Details                    #
+# Name              - SRN             - CGPA     #
+#------------------------------------------------#
+# Parimala S        - PES1UG19CS323   - 9.78     #
+# Pragna Bhargava   - PES1UG19CS332   - 8.6      #
+#       Section - E                              #
+##################################################
+
 from typing import Dict, List, Optional
 
 from llvmlite import binding, ir
@@ -104,6 +113,15 @@ class LLVMBackend(Backend):
     ##################################
     #        TO BE IMPLEMENTED       #
     ##################################
+
+    ##################################################
+    #                Team Details                    #
+    # Name              - SRN             - CGPA     #
+    #------------------------------------------------#
+    # Parimala S        - PES1UG19CS323   - 9.78     #
+    # Pragna Bhargava   - PES1UG19CS332   - 8.6      #
+    #       Section - E                              #
+    ##################################################
 
     def VarDef(self, node: VarDef):
         if self.builder is None:
@@ -222,12 +240,16 @@ class LLVMBackend(Backend):
         
         bb_condition = self.builder.append_basic_block(
                 self.module.get_unique_name("ifexpr.condition"))
+        
         bthen = self.builder.append_basic_block(
                 self.module.get_unique_name("ifexpr.then"))
+        
         belse = self.builder.append_basic_block(
                 self.module.get_unique_name("ifexpr.else"))
+        
         bb_end = self.builder.append_basic_block(
                 self.module.get_unique_name("ifexpr.end"))
+        
         self.builder.branch(bb_condition)
 
         with self.builder.goto_block(bb_condition):
@@ -235,17 +257,18 @@ class LLVMBackend(Backend):
             self.builder.cbranch(condition, bthen, belse)
 
         with self.builder.goto_block(bthen):
-            then_value = self.visit(node.then)
+            thenExpr = self.visit(node.thenExpr)
             self.builder.branch(bb_end)
         
         with self.builder.goto_block(belse):
-            else_value = self.visit(node.else_)
+            elseExpr = self.visit(node.elseExpr)
             self.builder.branch(bb_end)
 
         with self.builder.goto_block(bb_end):
-            phi = self.builder.phi(then_value.type)
-            phi.add_incoming(then_value, bthen)
-            phi.add_incoming(else_value, belse)
+            type_name = str(node.thenExpr.inferredType)
+            phi = self.builder.phi(self._get_llvm_type(type_name))
+            phi.add_incoming(thenExpr, bthen)
+            phi.add_incoming(elseExpr, belse)
         
         self.builder.position_at_end(bb_end)
         return phi
